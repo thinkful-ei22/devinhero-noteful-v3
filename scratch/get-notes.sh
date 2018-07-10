@@ -1,0 +1,1 @@
+mongo noteful < "findAllNotes.js"

@@ -1,0 +1,1 @@
+node ../utils/seed-database.js
