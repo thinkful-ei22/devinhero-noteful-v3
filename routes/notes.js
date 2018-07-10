@@ -17,7 +17,7 @@ router.get('/', (req, res, next) => {
   let filter = {};
 
   if(searchTerm){
-    filter.$or = [{title: {$regex: searchTerm}}, {content: {$regex: searchTerm, $options: 'i'}}];
+    filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, {content: {$regex: searchTerm, $options: 'i'}}];
   }
 
   mongoose.connect(MONGODB_URI)
