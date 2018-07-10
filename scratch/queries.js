@@ -6,31 +6,30 @@ const { MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 
 
+// console.log('GET notes/');
 
-console.log('GET notes/');
+// mongoose.connect(MONGODB_URI)
+//   .then( ()=>{
+//     const searchTerm = 'Sunlight';
+//     let filter = {};
 
-mongoose.connect(MONGODB_URI)
-  .then( ()=>{
-    const searchTerm = 'Sunlight';
-    let filter = {};
+//     if(searchTerm){
+//       filter.$or = [{title: {$regex: searchTerm}}, {content: {$regex: searchTerm}}];
+//       // filter.title={$regex: searchTerm};
+//     }
 
-    if(searchTerm){
-      filter.$or = [{title: {$regex: searchTerm}}, {content: {$regex: searchTerm}}];
-      // filter.title={$regex: searchTerm};
-    }
-
-    return Note.find(filter).sort({updatedAt: 'desc'});
-  })
-  .then(results =>{
-    console.log(results);
-  })
-  .then(() =>{
-    return mongoose.disconnect();
-  })
-  .catch(err => {
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+//     return Note.find(filter).sort({updatedAt: 'desc'});
+//   })
+//   .then(results =>{
+//     console.log(results);
+//   })
+//   .then(() =>{
+//     return mongoose.disconnect();
+//   })
+//   .catch(err => {
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
 
 
 // // console.log('GET notes/:id');
@@ -76,31 +75,32 @@ mongoose.connect(MONGODB_URI)
 
 // console.log('UPDATE note/:id');
 
-// mongoose.connect(MONGODB_URI)
-//   .then(results =>{
-//     const id = '000000000000000000000008';
-//     const title = 'WOWWW';
-//     const content = '';
-//     let updateObj = {$set: {}};
+mongoose.connect(MONGODB_URI)
+  .then(results =>{
+    const id = '000000000000000000000008';
+    const title = 'WOWWW';
+    const content = '';
+    let updateObj = {$set: {}};
 
-//     if(title)
-//       updateObj.$set['title'] = title;
-//     if(content)
-//       updateObj.$set['content'] = content;
+    if(title)
+      updateObj.$set['title'] = title;
+    if(content)
+      updateObj.$set['content'] = content;
 
-//     //console.log('updateObj:', updateObj);
-//     return Note.findByIdAndUpdate(id, updateObj, {options: {new: true} });
-//   })
-  // .then(results =>{
-  //     console.log(results);
-  //   })
-  //   .then(results =>{
-  //     return mongoose.disconnect();
-  //   })
-  //   .catch(err =>{
-  //     console.error(`ERROR: ${err.message}`);
-  //     console.error(err);
-  //   });
+    const options = {new: true};
+    //console.log('updateObj:', updateObj);
+    return Note.findByIdAndUpdate(id, updateObj, options );
+  })
+  .then(results =>{
+      console.log(results);
+    })
+    .then(results =>{
+      return mongoose.disconnect();
+    })
+    .catch(err =>{
+      console.error(`ERROR: ${err.message}`);
+      console.error(err);
+    });
 
 // mongoose.connect(MONGODB_URI)
 //   .then(results =>{
