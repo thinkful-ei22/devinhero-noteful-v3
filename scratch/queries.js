@@ -5,28 +5,32 @@ const { MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
 
-//get notes/
-// mongoose.connect(MONGODB_URI)
-//   .then( ()=>{
-//     const searchTerm = 'Solaire';
-//     let filter = {};
 
-//     if(searchTerm){
-//       filter.title={$regex: searchTerm};
-//     }
 
-//     return Note.find(filter).sort({updatedAt: 'desc'});
-//   })
-//   .then(results =>{
-//     console.log(results);
-//   })
-//   .then(() =>{
-//     return mongoose.disconnect();
-//   })
-//   .catch(err => {
-//     console.error(`ERROR: ${err.message}`);
-//     console.error(err);
-//   });
+console.log('GET notes/');
+
+mongoose.connect(MONGODB_URI)
+  .then( ()=>{
+    const searchTerm = 'Sunlight';
+    let filter = {};
+
+    if(searchTerm){
+      filter.$or = [{title: {$regex: searchTerm}}, {content: {$regex: searchTerm}}];
+      // filter.title={$regex: searchTerm};
+    }
+
+    return Note.find(filter).sort({updatedAt: 'desc'});
+  })
+  .then(results =>{
+    console.log(results);
+  })
+  .then(() =>{
+    return mongoose.disconnect();
+  })
+  .catch(err => {
+    console.error(`ERROR: ${err.message}`);
+    console.error(err);
+  });
 
 
 // // console.log('GET notes/:id');
@@ -98,20 +102,20 @@ const Note = require('../models/note');
   //     console.error(err);
   //   });
 
-mongoose.connect(MONGODB_URI)
-  .then(results =>{
+// mongoose.connect(MONGODB_URI)
+//   .then(results =>{
 
-    const id = '000000000000000000000007';
+//     const id = '000000000000000000000007';
 
-    return Note.findByIdAndRemove(id);
-  })
-  .then(results =>{
-    console.log(results);
-  })
-  .then(results =>{
-    return mongoose.disconnect();
-  })
-  .catch(err =>{
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+//     return Note.findByIdAndRemove(id);
+//   })
+//   .then(results =>{
+//     console.log(results);
+//   })
+//   .then(results =>{
+//     return mongoose.disconnect();
+//   })
+//   .catch(err =>{
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
