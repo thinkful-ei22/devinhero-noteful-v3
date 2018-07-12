@@ -2,42 +2,50 @@
   {
     "_id": "000000000000000000000000",
     "title": "LOCAL MAN PRAISES SUN",
-    "content": "Earlier today, a man lifted his arms gracefully into the air and beheld the sun. Glorious!"
+    "content": "Earlier today, a man lifted his arms gracefully into the air and beheld the sun. Glorious!",
+    "folderId": "111111111111111111111100"
   },
   {
     "_id": "000000000000000000000001",
     "title": "Why Miracles Are Better Than Sorcery",
-    "content": "Miracle users are known to be more prone to jolly cooperation, as well as being generally better people"
+    "content": "Miracle users are known to be more prone to jolly cooperation, as well as being generally better people",
+    "folderId": "111111111111111111111100"
   },
   {
     "_id": "000000000000000000000002",
     "title": "10 Miracles to Attune to on a Sunny Day",
-    "content": "bountiful Sunlight, lightning spear, great lightning spear, heal, great heal excerpt, homeward, sunlight blade, sunlight spear, soothing sunlight, seek guidance"
+    "content": "bountiful Sunlight, lightning spear, great lightning spear, heal, great heal excerpt, homeward, sunlight blade, sunlight spear, soothing sunlight, seek guidance",
+    "folderId": "111111111111111111111101"
   },
   {
     "_id": "000000000000000000000003",
     "title": "Invaders to Hunt",
-    "content": "Marvelous Chester; Patches the Hyena; Kirk, Knight of Thorns; Knight Lautrec; Paladin Leeroy"
+    "content": "Marvelous Chester; Patches the Hyena; Kirk, Knight of Thorns; Knight Lautrec; Paladin Leeroy",
+    "folderId": "111111111111111111111101"
   },
   {
     "_id": "000000000000000000000004",
     "title": "Top Jolly Cooperation Spots",
-    "content": "Ornstein and Smough, Quelaag, Bell Gargoyles"
+    "content": "Ornstein and Smough, Quelaag, Bell Gargoyles",
+    "folderId": "111111111111111111111101"
   },
   {
     "_id": "000000000000000000000005",
     "title": "Solaire Greeting",
-    "content": "Ah, hello! You don''t look Hollow, far from it! I am Solaire of Astora, an adherent of the Lord of Sunlight. Now that I am Undead, I have come to this great land, the birthplace of Lord Gwyn, to seek my very own sun! ...Do you find that strange? Well, you should! No need to hide your reaction. I get that look all the time! Hah hah hah!"
+    "content": "Ah, hello! You don''t look Hollow, far from it! I am Solaire of Astora, an adherent of the Lord of Sunlight. Now that I am Undead, I have come to this great land, the birthplace of Lord Gwyn, to seek my very own sun! ...Do you find that strange? Well, you should! No need to hide your reaction. I get that look all the time! Hah hah hah!",
+    "folderId": "111111111111111111111102"
   },
   {
     "_id": "000000000000000000000006",
     "title": "Solaire Retaliate",
-    "content": "If a stubborn beast you be, I have no choice! A Warrior of the Sun will not just sit and take it!"
+    "content": "If a stubborn beast you be, I have no choice! A Warrior of the Sun will not just sit and take it!",
+    "folderId": "111111111111111111111102"
   },
   {
     "_id": "000000000000000000000007",
     "title": "Incoherent Screaming",
-    "content": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAA AAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    "content": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA AAA AAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "folderId": "111111111111111111111103"
   },
   {
     "_id": "000000000000000000000008",
