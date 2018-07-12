@@ -53,14 +53,37 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           return Note.countDocuments();
-
         })
         .then(count =>{
-          console.log('results: ', count);
           expect(res.body).to.have.length(count);
       });
     });
 
+  });
+
+  describe('GET /api/notes/:id', function(){
+    it('will be completed later', function(){
+
+    });
+  });
+
+  
+  describe('POST /api/notes/', function(){
+    it('will be completed later', function(){
+
+    });
+  });
+
+  describe('PUT /api/notes/:id', function(){
+    it('will be completed later', function(){
+
+    });
+  });
+
+  describe('DELETE /api/notes/:id', function(){
+    it('will be completed later', function(){
+
+    });
   });
 
 });
