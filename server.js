@@ -43,20 +43,18 @@ app.use((err, req, res, next) => {
   }
 });
 
-mongoose.connect(MONGODB_URI)
-  .then(instance =>{
-    const conn = instance.connections[0];
-    // console.info(conn);
-    console.info(`Connected to: mongodb://${conn.host}:${conn.port}/${conn.name}`);
-  })
-  .catch(err =>{
-    console.error(`ERROR: ${err.message}`);
-    console.error('\n === Did you remember to start `mongod`? === \n');
-    console.error(err);
-  });
+if (require.main === module) {
+  mongoose.connect(MONGODB_URI, {useNewUrlParser: true})
+    .then(instance => {
+      const conn = instance.connections[0];
+      console.info(`Connected to: mongodb://${conn.host}:${conn.port}/${conn.name}`);
+    })
+    .catch(err => {
+      console.error(`ERROR: ${err.message}`);
+      console.error('\n === Did you remember to start `mongod`? === \n');
+      console.error(err);
+    });
 
-// Listen for incoming connections
-if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, function () {
     console.info(`Server listening on ${this.address().port}`);
   }).on('error', err => {

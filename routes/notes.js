@@ -5,6 +5,7 @@
 const express = require('express');
 
 const mongoose = require('mongoose');
+const ObjectId = require('mongoose').Types.ObjectId;
 const { PORT, MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 
@@ -19,20 +20,13 @@ router.get('/', (req, res, next) => {
   if(searchTerm){
     filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, {content: {$regex: searchTerm, $options: 'i'}}];
   }
-
-  mongoose.connect(MONGODB_URI)
-    .then( ()=>{
-      return Note.find(filter).sort({updatedAt: 'desc'});
-    })
+  
+  Note.find(filter).sort('created')
     .then(results =>{
       res.json(results);
     })
-    .then(() =>{
-      return mongoose.disconnect();
-    })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -41,20 +35,19 @@ router.get('/:id', (req, res, next) => {
 
   const id = req.params.id;
 
-  mongoose.connect(MONGODB_URI)
-    .then(response =>{
+  if(!ObjectId.isValid(id)) next();
 
-      return Note.findById(id);
-    })
+  Note.findById(id)
     .then(results =>{
-      res.json(results);
-    })
-    .then(results =>{
-      return mongoose.disconnect();
+      if(results){
+        res.json(results);
+      }
+      else{
+        next();
+      }
     })
     .catch(err =>{
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 
 });
@@ -62,7 +55,6 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
 
-  const id = req.params.id;
 
   /***** Never trust users - validate input *****/
   const newObj = {};
@@ -81,19 +73,12 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  mongoose.connect(MONGODB_URI)
-    .then(results =>{
-      return Note.create(newObj);
-    })
+  Note.create(newObj)
     .then(results =>{
       res.location(`${req.originalUrl}/${results.id}`).status(201).json(results);
     })
-    .then(results =>{
-      return mongoose.disconnect();
-    })
     .catch(err =>{
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -113,19 +98,13 @@ router.put('/:id', (req, res, next) => {
 
   const options = {new: true};
 
-  mongoose.connect(MONGODB_URI)
-    .then(results =>{
-      return Note.findByIdAndUpdate(id, updateObj, options);
-    })
+  
+  Note.findByIdAndUpdate(id, updateObj, options)
     .then(results =>{
       res.json(results);
     })
-    .then(results =>{
-      return mongoose.disconnect();
-    })
     .catch(err =>{
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -135,22 +114,15 @@ router.delete('/:id', (req, res, next) => {
 
   const id = req.params.id;
 
-  mongoose.connect(MONGODB_URI)
-    .then(results =>{
-      return Note.findByIdAndRemove(id);
-    })
+  Note.findByIdAndRemove(id)
     .then(results =>{
       if(results)
         res.status(204).end();
       else
         next();
     })
-    .then(results =>{
-      return mongoose.disconnect();
-    })
     .catch(err =>{
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
   
 });
