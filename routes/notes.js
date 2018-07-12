@@ -1,5 +1,3 @@
-/* global  MONGODB_URI Note*/
-
 'use strict';
 
 const express = require('express');
@@ -7,7 +5,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 const { PORT, MONGODB_URI } = require('../config');
+
 const Note = require('../models/note');
+
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get('/', (req, res, next) => {
     filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, {content: {$regex: searchTerm, $options: 'i'}}];
   }
   
-  Note.find(filter).sort('created')
+  Note.find(filter).sort({updatedAt: 'desc'})
     .then(results =>{
       res.json(results);
     })
@@ -35,7 +35,11 @@ router.get('/:id', (req, res, next) => {
 
   const id = req.params.id;
 
-  if(!ObjectId.isValid(id)) next();
+  if (!ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Note.findById(id)
     .then(results =>{
