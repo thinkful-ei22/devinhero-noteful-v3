@@ -16,10 +16,12 @@ chai.use(chaiHttp);
 describe('Noteful API - Notes', function () {
   const expectedFields = 
     ['title' 
-    ,'content'];
+    ,'content'
+  ];
   const expectedTimestamps = 
     ['createdAt'
-    ,'updatedAt'];
+    ,'updatedAt'
+  ];
 
   const badlyFormattedId = '${badlyFormattedId}';
   const invalidIdError = 'The `id` is not valid';
@@ -46,12 +48,13 @@ describe('Noteful API - Notes', function () {
 
   describe('GET /api/notes', function () {
 
-    it('returns an array w/ status 200', function(){
+    it('returns a populated array w/ status 200', function(){
       return chai.request(app).get('/api/notes')
         .then(res=>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
+          expect(res.body).to.not.be.empty;
       });
     });
 
@@ -96,7 +99,7 @@ describe('Noteful API - Notes', function () {
 
   describe('GET /api/notes/:id', function(){
     
-    it('returns a single object w/ status 200', function(){
+    it('returns a single populated object w/ status 200', function(){
       return Note.findOne()
         .then(note =>{
           return chai.request(app).get(`/api/notes/${note.id}`);
@@ -105,6 +108,7 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
+          expect(res.body).to.not.be.empty;
       });
     });
     
@@ -158,7 +162,7 @@ describe('Noteful API - Notes', function () {
       content: 'This is missing a title, and that is no bueno'
     };
 
-    it('returns a single object w/ status 201', function(){
+    it('returns a single populated object w/ status 201', function(){
       return chai.request(app)
         .post('/api/notes')
         .send(validPostObj)
@@ -166,6 +170,20 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(201);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
+          expect(res.body).to.not.be.empty;
+        });
+    });
+
+
+    it('returns the correct location header', function(){
+      return chai.request(app)
+        .post('/api/notes')
+        .send(validPostObj)
+        .then(res =>{
+          expect(res).to.have.status(201);
+          expect(res).to.be.json;
+          const expLocation = `/api/notes/${res.body.id}`;
+          expect(res.header.location).to.equal(expLocation);
         });
     });
 
@@ -185,19 +203,6 @@ describe('Noteful API - Notes', function () {
           expectedTimestamps.forEach(field =>{
             expect(res.body[field]).to.not.be.null;  
           });
-        });
-    });
-
-
-    it('returns the correct location header', function(){
-      return chai.request(app)
-        .post('/api/notes')
-        .send(validPostObj)
-        .then(res =>{
-          expect(res).to.have.status(201);
-          expect(res).to.be.json;
-          const expLocation = `/api/notes/${res.body.id}`;
-          expect(res.header.location).to.equal(expLocation);
         });
     });
 
@@ -222,15 +227,15 @@ describe('Noteful API - Notes', function () {
 
 
   describe('PUT /api/notes/:id', function(){
-    const validPutObj = {
+    const validPutAllFields = {
               title: 'Obi-Wan Greeting'
               ,content: 'Hello there!' 
             };
 
     const validPutContentOnly = {content: 'Wow, only content'};
 
-    it('returns a single object w/ status 200', function(){
-      const updateObj = validPutObj;
+    it('returns a single populated object w/ status 200', function(){
+      const updateObj = validPutAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
@@ -241,13 +246,14 @@ describe('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
+          expect(res.body).to.not.be.empty;
         });
     });
 
 
     it('returns an object with the expected field values', function(){
       let dbRes;
-      const updateObj = validPutObj;
+      const updateObj = validPutAllFields;
       return Note.findOne()
         .then(_dbRes =>{
           dbRes = _dbRes;
@@ -295,10 +301,15 @@ describe('Noteful API - Notes', function () {
     });
 
     
-    xit('can be found in the db with the correct values', function(){
+    xit('correct values are found in db if many fields modified', function(){
       //TODO
     });
-
+    
+    
+    xit('correct values are found in db if limited fields modified', function(){
+      //TODO
+    });
+    
 
     it('returns status 400 w/ msg if put without content', function(){
       const updateObj = {};
@@ -317,7 +328,7 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      const updateObj = validPutObj;
+      const updateObj = validPutAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
@@ -333,7 +344,7 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      const updateObj = validPutObj;
+      const updateObj = validPutAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
