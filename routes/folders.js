@@ -35,10 +35,8 @@ router.get('/:id', (req, res, next) =>{
 
   Folder.findById(id)
     .then(results =>{
-      if(results)
-        res.json(results);
-      else
-        next();
+      if(results) res.json(results);
+      else next();
     })
     .catch(err =>{
       next(err);
@@ -108,7 +106,8 @@ router.put('/:id', (req,res,next) =>{
 
   Folder.findByIdAndUpdate(id, updateObj, options)
     .then(results =>{
-      res.json(results);
+      if(results) res.json(results);
+      else next();
     })
     .catch(err =>{
       if(err.code === 11000){

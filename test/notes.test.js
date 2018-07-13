@@ -24,7 +24,9 @@ describe('Noteful API - Notes', function () {
     ,'updatedAt'
   ];
 
-  const badlyFormattedId = '${badlyFormattedId}';
+  const baseEndpoint = '/api/notes';
+
+  const badlyFormattedId = 'badlyFormattedId';
   const invalidIdError = 'The `id` is not valid';
   const nonexistentId = '999999999999999999999999';
 
@@ -33,10 +35,7 @@ describe('Noteful API - Notes', function () {
   });
 
   beforeEach(function () {
-    // return mongoose.connection.db.dropDatabase()
-      // .then(() =>{
-      // });
-        return Note.insertMany(seedNotes);
+    return Note.insertMany(seedNotes);
   });
 
   afterEach(function () {
@@ -50,7 +49,7 @@ describe('Noteful API - Notes', function () {
   describe('GET /api/notes', function () {
 
     it('returns a populated array w/ status 200', function(){
-      return chai.request(app).get('/api/notes')
+      return chai.request(app).get(`${baseEndpoint}`)
         .then(res=>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
@@ -62,7 +61,7 @@ describe('Noteful API - Notes', function () {
 
     it('returns the correct number of elements', function(){
       let res;
-      return chai.request(app).get('/api/notes')
+      return chai.request(app).get(`${baseEndpoint}`)
         .then(_res=>{
           res = _res;
           expect(res).to.have.status(200);
@@ -77,7 +76,7 @@ describe('Noteful API - Notes', function () {
 
     it('contains elements with expected field values', function(){
       let res;
-      return chai.request(app).get('/api/notes')
+      return chai.request(app).get(`${baseEndpoint}`)
         .then(_res=>{
           res = _res;
           expect(res).to.have.status(200);
@@ -98,12 +97,13 @@ describe('Noteful API - Notes', function () {
 
   });
 
+  //// GET /notes/:id
   describe('GET /api/notes/:id', function(){
     
     it('returns a single populated object w/ status 200', function(){
       return Note.findOne()
         .then(note =>{
-          return chai.request(app).get(`/api/notes/${note.id}`);
+          return chai.request(app).get(`${baseEndpoint}/${note.id}`);
         })
         .then(res=>{
           expect(res).to.have.status(200);
@@ -119,7 +119,7 @@ describe('Noteful API - Notes', function () {
       return Note.findOne()
         .then(note =>{
           dbRes = note;
-          return chai.request(app).get(`/api/notes/${note.id}`);
+          return chai.request(app).get(`${baseEndpoint}/${note.id}`);
         })
         .then(res =>{
           expect(res).to.have.status(200);
@@ -135,7 +135,7 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      return chai.request(app).get(`/api/notes/${badlyFormattedId}`)
+      return chai.request(app).get(`${baseEndpoint}/${badlyFormattedId}`)
         .then(res =>{
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal(invalidIdError);
@@ -144,7 +144,7 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      return chai.request(app).get(`/api/notes/${nonexistentId}`)
+      return chai.request(app).get(`${baseEndpoint}/${nonexistentId}`)
         .then(res =>{
           expect(res).to.have.status(404);
         });
@@ -152,7 +152,7 @@ describe('Noteful API - Notes', function () {
 
   });
 
-  
+  //// POST /notes
   describe('POST /api/notes/', function(){
     const validPostObj = {
       title: 'The Tragedy of Darth Plagueis the Wise',
@@ -165,7 +165,7 @@ describe('Noteful API - Notes', function () {
 
     it('returns a single populated object w/ status 201', function(){
       return chai.request(app)
-        .post('/api/notes')
+        .post(`${baseEndpoint}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
@@ -178,12 +178,12 @@ describe('Noteful API - Notes', function () {
 
     it('returns the correct location header', function(){
       return chai.request(app)
-        .post('/api/notes')
+        .post(`${baseEndpoint}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
           expect(res).to.be.json;
-          const expLocation = `/api/notes/${res.body.id}`;
+          const expLocation = `${baseEndpoint}/${res.body.id}`;
           expect(res.header.location).to.equal(expLocation);
         });
     });
@@ -191,7 +191,7 @@ describe('Noteful API - Notes', function () {
 
     it('returns an object with expected field values', function(){
       return chai.request(app)
-        .post('/api/notes')
+        .post(`${baseEndpoint}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
@@ -215,7 +215,7 @@ describe('Noteful API - Notes', function () {
     
     it('returns status 400 w/ msg if posted without title', function(){
       return chai.request(app)
-        .post('/api/notes')
+        .post(`${baseEndpoint}`)
         .send(noTitlePostObj)
         .then(res =>{
           expect(res).to.have.status(400);
@@ -226,21 +226,21 @@ describe('Noteful API - Notes', function () {
 
   });
 
-
+  //// PUT /notes/:id
   describe('PUT /api/notes/:id', function(){
-    const validPutAllFields = {
+    const validPutObjAllFields = {
               title: 'Obi-Wan Greeting'
               ,content: 'Hello there!' 
             };
 
-    const validPutContentOnly = {content: 'Wow, only content'};
+    const validPutObjContentOnly = {content: 'Wow, only content'};
 
     it('returns a single populated object w/ status 200', function(){
-      const updateObj = validPutAllFields;
+      const updateObj = validPutObjAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
-            .put(`/api/notes/${dbRes.id}`)
+            .put(`${baseEndpoint}/${dbRes.id}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -254,12 +254,12 @@ describe('Noteful API - Notes', function () {
 
     it('returns an object with the expected field values', function(){
       let dbRes;
-      const updateObj = validPutAllFields;
+      const updateObj = validPutObjAllFields;
       return Note.findOne()
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
-            .put(`/api/notes/${dbRes.id}`)
+            .put(`${baseEndpoint}/${dbRes.id}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -279,12 +279,12 @@ describe('Noteful API - Notes', function () {
     
     it('returns expected values if limited fields are modified', function(){
       let dbRes;
-      const updateObj = validPutContentOnly;
+      const updateObj = validPutObjContentOnly;
       return Note.findOne()
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
-            .put(`/api/notes/${dbRes.id}`)
+            .put(`${baseEndpoint}/${dbRes.id}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -302,38 +302,38 @@ describe('Noteful API - Notes', function () {
     });
 
     
-    xit('correct values are found in db if many fields modified', function(){
+    xit('correct values are found in db if all user input fields modified', function(){
       //TODO
     });
     
     
-    xit('correct values are found in db if limited fields modified', function(){
+    xit('correct values are found in db if finite user input fields modified', function(){
       //TODO
     });
     
 
-    it('returns status 400 w/ msg if put without content', function(){
+    it('returns status 400 w/ msg if put without any valid fields', function(){
       const updateObj = {};
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
-            .put(`/api/notes/${dbRes.id}`)
+            .put(`${baseEndpoint}/${dbRes.id}`)
             .send(updateObj);
         }) 
         .then(res =>{
           expect(res).to.have.status(400);
           expect(res).to.be.json;
-          expect(res.body.message).to.equal('No valid update content found');
+          expect(res.body.message).to.equal('No valid update fields in request body');
         });
     });
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      const updateObj = validPutAllFields;
+      const updateObj = validPutObjAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
-            .put(`/api/notes/${badlyFormattedId}`)
+            .put(`${baseEndpoint}/${badlyFormattedId}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -345,11 +345,11 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      const updateObj = validPutAllFields;
+      const updateObj = validPutObjAllFields;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
-            .put(`/api/notes/${nonexistentId}`)
+            .put(`${baseEndpoint}/${nonexistentId}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -360,13 +360,13 @@ describe('Noteful API - Notes', function () {
 
   });
 
-
+  //// DELETE /notes/:id
   describe('DELETE /api/notes/:id', function(){
 
     it('returns status 204', function(){
       return Note.findOne()
         .then(dbRes =>{
-          return chai.request(app).delete(`/api/notes/${dbRes.id}`);
+          return chai.request(app).delete(`${baseEndpoint}/${dbRes.id}`);
         })
         .then(res =>{
           expect(res).to.have.status(204);
@@ -378,7 +378,7 @@ describe('Noteful API - Notes', function () {
       return Note.findOne()
         .then(_dbRes =>{
           dbRes = _dbRes;
-          return chai.request(app).delete(`/api/notes/${dbRes.id}`);
+          return chai.request(app).delete(`${baseEndpoint}/${dbRes.id}`);
         })
         .then(res =>{
           expect(res).to.have.status(204);
@@ -393,7 +393,7 @@ describe('Noteful API - Notes', function () {
     it('returns status 400 w/ msg when passed invalid id format', function(){
       return Note.findOne()
         .then(dbRes =>{
-          return chai.request(app).delete(`/api/notes/${badlyFormattedId}`);
+          return chai.request(app).delete(`${baseEndpoint}/${badlyFormattedId}`);
         })
         .then(res =>{
           expect(res).to.have.status(400);
@@ -406,7 +406,7 @@ describe('Noteful API - Notes', function () {
     it('returns status 404 when passed nonexistent id', function(){
       return Note.findOne()
         .then(dbRes =>{
-          return chai.request(app).delete(`/api/notes/${nonexistentId}`);
+          return chai.request(app).delete(`${baseEndpoint}/${nonexistentId}`);
         })
         .then(res =>{
           expect(res).to.have.status(404);

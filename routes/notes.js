@@ -15,10 +15,15 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
 
   const searchTerm = req.query.searchTerm;
+  const folderId = req.query.folderId;
   let filter = {};
 
   if(searchTerm){
-    filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, {content: {$regex: searchTerm, $options: 'i'}}];
+    filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, 
+                  {content: {$regex: searchTerm, $options: 'i'}}];
+  }
+  if(folderId){
+    filter.$and =[{folderId}];
   }
   
   Note.find(filter).sort({updatedAt: 'desc'})
@@ -43,12 +48,8 @@ router.get('/:id', (req, res, next) => {
 
   Note.findById(id)
     .then(results =>{
-      if(results){
-        res.json(results);
-      }
-      else{
-        next();
-      }
+      if(results) res.json(results);
+      else next();
     })
     .catch(err =>{
       next(err);
@@ -62,7 +63,7 @@ router.post('/', (req, res, next) => {
 
   /***** Never trust users - validate input *****/
   const newObj = {};
-  const updateableFields = ['title', 'content'];
+  const updateableFields = ['title', 'content', 'folderId'];
 
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -71,6 +72,14 @@ router.post('/', (req, res, next) => {
   });
 
   /***** Never trust users - validate input *****/
+  if(newObj.folderId && !ObjectId.isValid(newObj.folderId)){
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  //TODO?: Verify folderId exists in db
+
   if (!newObj.title) {
     const err = new Error('Missing `title` in request body');
     err.status = 400;
@@ -108,7 +117,7 @@ router.put('/:id', (req, res, next) => {
   });
 
   if(!hasVal){
-    const err = new Error('No valid update content found');
+    const err = new Error('No valid update fields in request body');
     err.status = 400;
     return next(err);
   }
