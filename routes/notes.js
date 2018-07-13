@@ -90,22 +90,35 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   const id = req.params.id;
 
+  if (!ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
   /***** Never trust users - validate input *****/
   const updateObj = {$set: {}};
   const updateableFields = ['title', 'content'];
-
+  let hasVal = false;
   updateableFields.forEach(field => {
     if (field in req.body) {
+      hasVal = true;
       updateObj.$set[field] = req.body[field];
     }
   });
 
+  if(!hasVal){
+    const err = new Error('No valid update content found');
+    err.status = 400;
+    return next(err);
+  }
+
   const options = {new: true};
 
-  
   Note.findByIdAndUpdate(id, updateObj, options)
     .then(results =>{
-      res.json(results);
+      if(results) res.json(results);
+      else next();
     })
     .catch(err =>{
       next(err);
@@ -117,6 +130,12 @@ router.put('/:id', (req, res, next) => {
 router.delete('/:id', (req, res, next) => {
 
   const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Note.findByIdAndRemove(id)
     .then(results =>{
