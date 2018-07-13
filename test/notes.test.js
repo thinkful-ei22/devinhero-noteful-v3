@@ -1,4 +1,5 @@
 'use strict';
+
 const app = require('../server');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -19,10 +20,10 @@ describe('Noteful API - Notes', function () {
   });
 
   beforeEach(function () {
-    return mongoose.connection.db.dropDatabase()
-      .then(() =>{
+    // return mongoose.connection.db.dropDatabase()
+      // .then(() =>{
+      // });
         return Note.insertMany(seedNotes);
-      });
   });
 
   afterEach(function () {
@@ -48,7 +49,6 @@ describe('Noteful API - Notes', function () {
       let res;
       return chai.request(app).get('/api/notes')
         .then(_res=>{
-
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
