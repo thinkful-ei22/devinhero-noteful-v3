@@ -32,6 +32,7 @@ describe('Noteful API - Folders', function(){
 
   const badlyFormattedId = 'badlyFormattedId';
   const invalidIdError = 'The `id` is not valid';
+  const duplicateNameError = 'The folder name already exists';
   const nonexistentId = '999999999999999999999999';
 
   before(function () {
@@ -205,6 +206,11 @@ describe('Noteful API - Folders', function(){
     });
     
 
+    xit('returns status 400 w/ msg if posted with duplicate name', function(){
+      //TODO
+    });
+
+
     it('returns status 400 w/ msg if posted with empty request body', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
@@ -280,6 +286,11 @@ describe('Noteful API - Folders', function(){
           expect(res).to.be.json;
           expect(res.body.message).to.equal('Missing `name` in request body');
         });
+    });
+
+
+    xit('returns status 400 w/ msg if put with duplicate name', function(){
+      //TODO
     });
 
 
