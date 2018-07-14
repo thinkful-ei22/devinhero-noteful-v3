@@ -48,10 +48,6 @@ describe('Noteful API - Notes', function () {
   const compareAllExpectedIDs = function(resBody, dbRes){
     expectedIDs.forEach(field =>{
       /* THIS FEELS JANKY... why the inconsistent need for .toJSON()? 
-         Gotta be a better way to try multiple things with finesse,
-         or make the behavior consistent between the differing id 
-         fields. But I've spent FAR TOO LONG writing tests, so here it is
-         for now.
 
          Handling for unknown existence of folderId is good though,
          that's necessary.
