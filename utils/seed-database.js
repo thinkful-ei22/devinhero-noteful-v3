@@ -13,9 +13,9 @@ mongoose.connect(MONGODB_URI)
   .then(() => mongoose.connection.db.dropDatabase())
   .then(() => {
     return Promise.all([
+      Note.insertMany(seedNotes),
       Folder.insertMany(seedFolders),
-      Folder.createIndexes,
-      Note.insertMany(seedNotes)
+      Folder.createIndexes
     ]);
   })
   .then(results => {

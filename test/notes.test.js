@@ -10,6 +10,9 @@ const { TEST_MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 const seedNotes = require('../db/seed/notes');
 
+const Folder = require ('../models/folder');
+const seedFolders = require('../db/seed/folders');
+
 const expect = chai.expect;
 
 chai.use(chaiHttp);
@@ -55,8 +58,8 @@ describe('Noteful API - Notes', function () {
       */
       switch(field){
         case 'folderId':
-            if(!resBody[field]) expect(dbRes[field]).to.be.undefined;
-            else expect(resBody[field]).to.equal(dbRes[field].toJSON());
+            if(!resBody.folderId) expect(dbRes.folderId).to.be.undefined;
+            else expect(resBody.folderId.id).to.equal(dbRes.folderId.toJSON());
             break;
         default:
             expect(resBody[field]).to.equal(dbRes[field]);
@@ -92,7 +95,10 @@ describe('Noteful API - Notes', function () {
   });
 
   beforeEach(function () {
-    return Note.insertMany(seedNotes);
+    return Note.insertMany(seedNotes)
+      .then(res =>{
+        return Folder.insertMany(seedFolders);
+      });
   });
 
   afterEach(function () {
@@ -457,7 +463,7 @@ describe('Noteful API - Notes', function () {
         }) 
         .then(res =>{
           expect(res).to.have.status(400);
-          expect(res).to.be.json;  
+          expect(res).to.be.json;
           expect(res.body.message).to.equal(invalidIdError);
         });
     });

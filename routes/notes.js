@@ -27,6 +27,7 @@ router.get('/', (req, res, next) => {
   }
   
   Note.find(filter).sort({updatedAt: 'desc'})
+    .populate('folderId')
     .then(results =>{
       res.json(results);
     })
@@ -47,6 +48,7 @@ router.get('/:id', (req, res, next) => {
   }
 
   Note.findById(id)
+    .populate('folderId')
     .then(results =>{
       if(results) res.json(results);
       else next();
