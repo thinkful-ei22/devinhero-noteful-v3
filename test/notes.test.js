@@ -50,7 +50,7 @@ describe('Noteful API - Notes', function () {
       /* THIS FEELS JANKY... why the inconsistent need for .toJSON()? 
 
          Handling for unknown existence of folderId is good though,
-         that's necessary.
+         that's necessary. 
       */
       switch(field){
         case 'folderId':
