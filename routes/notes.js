@@ -107,7 +107,7 @@ router.put('/:id', (req, res, next) => {
 
   /***** Never trust users - validate input *****/
   const updateObj = {$set: {}};
-  const updateableFields = ['title', 'content'];
+  const updateableFields = ['title', 'content', 'folderId'];
   let hasVal = false;
   updateableFields.forEach(field => {
     if (field in req.body) {
@@ -115,6 +115,14 @@ router.put('/:id', (req, res, next) => {
       updateObj.$set[field] = req.body[field];
     }
   });
+
+  if(updateObj.$set.folderId && !ObjectId.isValid(updateObj.$set.folderId)){
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  //TODO?: Verify folderId exists in db
 
   if(!hasVal){
     const err = new Error('No valid update fields in request body');

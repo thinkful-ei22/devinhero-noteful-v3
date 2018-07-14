@@ -143,7 +143,6 @@ describe('Noteful API - Folders', function(){
     it('returns status 404 when passed nonexistent id', function(){
       return chai.request(app).get(`${baseEndpoint}/${nonexistentId}`)
         .then(res =>{
-          console.log(res.body);
           expect(res).to.have.status(404);
         });
     });

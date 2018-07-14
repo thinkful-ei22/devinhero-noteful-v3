@@ -14,8 +14,23 @@ const expect = chai.expect;
 
 chai.use(chaiHttp);
 
+
+
 describe('Noteful API - Notes', function () {
-  const expectedFields = 
+
+  //// Common values
+  
+  const baseEndpoint = '/api/notes';
+  const invalidIdError = 'The `id` is not valid';
+  const invalidFolderIdError = 'The `folderId` is not valid';
+  const invalidId = 'badlyFormattedId';
+  const nonexistentId = '999999999999999999999999';
+
+  const expectedIDs =
+    ['id'
+    ,'folderId'
+  ];
+  const expectedInputFields = 
     ['title' 
     ,'content'
   ];
@@ -24,11 +39,53 @@ describe('Noteful API - Notes', function () {
     ,'updatedAt'
   ];
 
-  const baseEndpoint = '/api/notes';
+  
+  //// Helper functions
 
-  const badlyFormattedId = 'badlyFormattedId';
-  const invalidIdError = 'The `id` is not valid';
-  const nonexistentId = '999999999999999999999999';
+  const compareAllExpectedIDs = function(resBody, dbRes){
+    expectedIDs.forEach(field =>{
+      /* THIS FEELS JANKY... why the inconsistent need for .toJSON()? 
+         Gotta be a better way to try multiple things with finesse,
+         or make the behavior consistent between the differing id 
+         fields. But I've spent FAR TOO LONG writing tests, so here it is
+         for now.
+
+         Handling for unknown existence of folderId is good though,
+         that's necessary.
+      */
+      switch(field){
+        case 'folderId':
+            if(!resBody[field]) expect(dbRes[field]).to.be.undefined;
+            else expect(resBody[field]).to.equal(dbRes[field].toJSON());
+            break;
+        default:
+            expect(resBody[field]).to.equal(dbRes[field]);
+      }
+    });
+  };
+
+  const compareAllExpectedUserInputs = function(resBody, dbRes){
+    expectedInputFields.forEach(field =>{
+      expect(resBody[field]).to.equal(dbRes[field]);
+    });
+  };
+
+  const compareAllExpectedTimestamps = function(resBody, dbRes){
+    expectedTimestamps.forEach(field =>{
+      expect(resBody[field]).to.equal(dbRes[field].toJSON());
+    });
+  };
+
+  const compareAllExpectedFields = function(resBody, dbRes){
+    // console.log('ID');
+    compareAllExpectedIDs(resBody, dbRes);
+    // console.log('Inputs');
+    compareAllExpectedUserInputs(resBody, dbRes);
+    // console.log('Timestamps');
+    compareAllExpectedTimestamps(resBody, dbRes);
+  };
+
+  //// Before/After functions
 
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI, {useNewUrlParser: true});
@@ -74,7 +131,7 @@ describe('Noteful API - Notes', function () {
     });
 
 
-    it('contains elements with expected field values', function(){
+    it('contains elements with expected field values from db', function(){
       let res;
       return chai.request(app).get(`${baseEndpoint}`)
         .then(_res=>{
@@ -84,15 +141,37 @@ describe('Noteful API - Notes', function () {
           return Note.find().sort({updatedAt: 'desc'});
       })
       .then(dbRes =>{
-        for(let i = 0; i < res.body.length; ++i){
-          expectedTimestamps.forEach(field =>{
-            expect(res.body[0][field]).to.equal(dbRes[0][field].toJSON());
-          });
-          expectedFields.forEach(field =>{
-            expect(res.body[0][field]).to.equal(dbRes[0][field]);
-          });
-        }
+        for(let i = 0; i < res.body.length; ++i)
+          compareAllExpectedFields(res.body[i], dbRes[i]);
       });
+    });
+
+    
+    xit('returns expected items when passed a searchTerm in query', function(){
+      //TODO
+    });
+
+
+    it('returns expected items when passed a valid folderId in query', function(){
+      const folderId = '111111111111111111111100';
+      let res;
+      return chai.request(app)
+        .get(`${baseEndpoint}?folderId=${folderId}`)
+        .then(_res =>{
+          res = _res;
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.not.be.empty;
+          return Note.find({folderId});
+        })
+        .then(dbRes =>{
+          for(let i = 0; i < dbRes.length; ++i)
+            compareAllExpectedFields(res.body[i], dbRes[i]);
+        });
+    });
+
+    xit('returns empty array if query has no matches', function(){
+
     });
 
   });
@@ -124,18 +203,13 @@ describe('Noteful API - Notes', function () {
         .then(res =>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expectedTimestamps.forEach(field =>{
-            expect(res.body[field]).to.equal(dbRes[field].toJSON());
-          });
-          expectedFields.forEach(field =>{
-            expect(res.body[field]).to.equal(dbRes[field]);
-          });
+          compareAllExpectedFields(res.body, dbRes);
         });
     });
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      return chai.request(app).get(`${baseEndpoint}/${badlyFormattedId}`)
+      return chai.request(app).get(`${baseEndpoint}/${invalidId}`)
         .then(res =>{
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal(invalidIdError);
@@ -156,11 +230,17 @@ describe('Noteful API - Notes', function () {
   describe('POST /api/notes/', function(){
     const validPostObj = {
       title: 'The Tragedy of Darth Plagueis the Wise',
-      content: 'Ironic. He could save others from death, but not himself.'
+      content: 'Ironic. He could save others from death, but not himself.',
+      folderId: '111111111111111111111100'
     };
 
     const noTitlePostObj = {
       content: 'This is missing a title, and that is no bueno'
+    };
+
+    const invalidFolderIdPostObj = {
+      title: 'Bad folder!',
+      folderId: invalidId
     };
 
     it('returns a single populated object w/ status 201', function(){
@@ -196,13 +276,11 @@ describe('Noteful API - Notes', function () {
         .then(res =>{
           expect(res).to.have.status(201);
           expect(res).to.be.json;
-          expectedFields.forEach(field =>{
-            expect(res.body[field]).to.equal(validPostObj[field]);
-          });
+          compareAllExpectedUserInputs(res.body, validPostObj);
           //Don't know these values from return object alone
-          expect(res.body.id).to.not.be.null;
+          expect(res.body.id).to.exist;
           expectedTimestamps.forEach(field =>{
-            expect(res.body[field]).to.not.be.null;  
+            expect(res.body[field]).to.exist;  
           });
         });
     });
@@ -210,6 +288,23 @@ describe('Noteful API - Notes', function () {
 
     xit('can be found in the db with the correct values', function(){
       //TODO
+    });
+
+
+    it('returns status 400 w/ msg if posted with invalid folderId format', function(){
+      return chai.request(app)
+        .post(`${baseEndpoint}`)
+        .send(invalidFolderIdPostObj)
+        .then(res =>{
+          expect(res).to.have.status(400);
+          expect(res.body.message).to.equal(invalidFolderIdError);
+        });
+    });
+    
+
+    xit('returns status 400 w/ msg if posted with nonexistent folderId', function(){
+      //TODO
+      //Should this case be handled?
     });
     
     
@@ -228,15 +323,17 @@ describe('Noteful API - Notes', function () {
 
   //// PUT /notes/:id
   describe('PUT /api/notes/:id', function(){
-    const validPutObjAllFields = {
+    const validPutObj = {
               title: 'Obi-Wan Greeting'
               ,content: 'Hello there!' 
             };
 
     const validPutObjContentOnly = {content: 'Wow, only content'};
 
+    const invalidFolderIdPutObj = {folderId: invalidId};
+
     it('returns a single populated object w/ status 200', function(){
-      const updateObj = validPutObjAllFields;
+      const updateObj = validPutObj;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
@@ -252,9 +349,9 @@ describe('Noteful API - Notes', function () {
     });
 
 
-    it('returns an object with the expected field values', function(){
+    it('returns an object with the expected user inputs', function(){
       let dbRes;
-      const updateObj = validPutObjAllFields;
+      const updateObj = validPutObj;
       return Note.findOne()
         .then(_dbRes =>{
           dbRes = _dbRes;
@@ -265,7 +362,7 @@ describe('Noteful API - Notes', function () {
         .then(res =>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expectedFields.forEach(field =>{
+          expectedInputFields.forEach(field =>{
             if(field in updateObj) expect(res.body[field]).to.equal(updateObj[field]);
             else expect(res.body[field]).to.equal(dbRes[field]);
           });
@@ -277,7 +374,7 @@ describe('Noteful API - Notes', function () {
     });
 
     
-    it('returns expected values if limited fields are modified', function(){
+    it('returns expected values ', function(){
       let dbRes;
       const updateObj = validPutObjContentOnly;
       return Note.findOne()
@@ -290,7 +387,7 @@ describe('Noteful API - Notes', function () {
         .then(res =>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expectedFields.forEach(field =>{
+          expectedInputFields.forEach(field =>{
             if(field in updateObj) expect(res.body[field]).to.equal(updateObj[field]);
             else expect(res.body[field]).to.equal(dbRes[field]);
           });
@@ -328,12 +425,34 @@ describe('Noteful API - Notes', function () {
     });
 
 
-    it('returns status 400 w/ msg when passed invalid id format', function(){
-      const updateObj = validPutObjAllFields;
+    it('returns status 400 w/ msg if put with invalid folderId format', function(){
+      const updateObj = invalidFolderIdPutObj;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
-            .put(`${baseEndpoint}/${badlyFormattedId}`)
+            .put(`${baseEndpoint}/${dbRes.id}`)
+            .send(updateObj);
+        }) 
+        .then(res =>{
+          expect(res).to.have.status(400);
+          expect(res).to.be.json;
+          expect(res.body.message).to.equal(invalidFolderIdError);
+        });
+    });
+
+
+    xit('returns status 400 w/ msg if put with nonexistent folderId', function(){
+      //TODO
+      //should this case be handled?
+    });
+
+
+    it('returns status 400 w/ msg when passed invalid id format', function(){
+      const updateObj = validPutObj;
+      return Note.findOne()
+        .then(dbRes =>{
+          return chai.request(app)
+            .put(`${baseEndpoint}/${invalidId}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -345,7 +464,7 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      const updateObj = validPutObjAllFields;
+      const updateObj = validPutObj;
       return Note.findOne()
         .then(dbRes =>{
           return chai.request(app)
@@ -393,7 +512,7 @@ describe('Noteful API - Notes', function () {
     it('returns status 400 w/ msg when passed invalid id format', function(){
       return Note.findOne()
         .then(dbRes =>{
-          return chai.request(app).delete(`${baseEndpoint}/${badlyFormattedId}`);
+          return chai.request(app).delete(`${baseEndpoint}/${invalidId}`);
         })
         .then(res =>{
           expect(res).to.have.status(400);
