@@ -40,6 +40,7 @@ describe('Noteful API - Folders', function(){
   });
 
   beforeEach(function () {
+    this.timeout(5000);
     return Folder.insertMany(seedFolders);
   });
 
