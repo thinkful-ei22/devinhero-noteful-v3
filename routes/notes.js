@@ -31,7 +31,7 @@ router.get('/', (req, res, next) => {
   if(tagId) filter.$and.push({ tags: {$all: [tagId]} });
   
   Note.find(filter).sort({updatedAt: 'desc'})
-    .populate('folderId')
+    // .populate('folderId')
     .populate('tags')
     .then(results =>{
       res.json(results);
@@ -53,7 +53,7 @@ router.get('/:id', (req, res, next) => {
   }
 
   Note.findById(id)
-    .populate('folderId')
+    // .populate('folderId')
     .populate('tags')
     .then(results =>{
       if(results) res.json(results);
