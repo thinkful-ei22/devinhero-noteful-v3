@@ -36,6 +36,7 @@ describe('Noteful API - Notes', function () {
   const expectedInputFields = 
     ['title' 
     ,'content'
+    ,'favoritePuppy'
   ];
   const expectedTimestamps = 
     ['createdAt'
