@@ -53,10 +53,10 @@ describe('Noteful API - Notes', function () {
          Handling for unknown existence of folderId is good though,
          that's necessary. 
       */
-      switch(field){
-        case 'folderId':
+     switch(field){
+       case 'folderId':
             if(!resBody.folderId) expect(dbRes.folderId).to.be.undefined;
-            else expect(resBody.folderId.id).to.equal(dbRes.folderId.toJSON());
+            else expect(resBody.folderId).to.equal(dbRes.folderId.toJSON());
             break;
         default:
             expect(resBody[field]).to.equal(dbRes[field]);
