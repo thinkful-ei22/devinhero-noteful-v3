@@ -21,7 +21,7 @@ router.get('/', (req, res, next) => {
   const searchTerm = req.query.searchTerm;
   const folderId = req.query.folderId;
   const tagId = req.query.tagId;
-  let filter = {};
+  let filter = {userId: req.user.id};
 
   if(searchTerm){
     filter.$or = [{title: {$regex: searchTerm, $options: 'i'}}, 
@@ -49,6 +49,7 @@ router.get('/', (req, res, next) => {
 router.get('/:id', (req, res, next) => {
 
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -56,7 +57,7 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findById(id)
+  Note.findOne({_id: id, userId})
     // .populate('folderId')
     .populate('tags')
     .then(results =>{
@@ -71,10 +72,10 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-
+  const userId = req.user.id;
 
   /***** Never trust users - validate input *****/
-  const newObj = {};
+  const newObj = {userId: userId};
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
 
   updateableFields.forEach(field => {
@@ -128,6 +129,7 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -177,9 +179,10 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  const query = {_id: id, userId};
   const options = {new: true};
 
-  Note.findByIdAndUpdate(id, updateObj, options)
+  Note.findOneAndUpdate(query, updateObj, options)
     .then(results =>{
       if(results) res.json(results);
       else next();
@@ -194,6 +197,7 @@ router.put('/:id', (req, res, next) => {
 router.delete('/:id', (req, res, next) => {
 
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -201,7 +205,9 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findByIdAndRemove(id)
+  const query = {_id: id, userId};
+
+  Note.findOneAndRemove(query)
     .then(results =>{
       if(results)
         res.status(204).end();
@@ -211,7 +217,6 @@ router.delete('/:id', (req, res, next) => {
     .catch(err =>{
       next(err);
     });
-  
 });
 
 module.exports = router;
