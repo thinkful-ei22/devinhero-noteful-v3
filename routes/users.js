@@ -24,7 +24,7 @@ router.post('/', (req,res,next) =>{
 
   inputFields.forEach(field =>{
     if(typeof newObj[field] !== 'string' && newObj[field]){
-      const err = new Error(`Field '${field}' is not a string`);
+      const err = new Error(`Field \`${field}\` is not a string`);
       err.status = 400;
       return next(err);
     }
@@ -32,13 +32,13 @@ router.post('/', (req,res,next) =>{
 
   authFields.forEach(field =>{
     if(!newObj[field]){
-      const err = new Error(`Missing '${field}' in request body`);
+      const err = new Error(`Missing \`${field}\` in request body`);
       err.status = 400;
       return next(err);
     }
 
     if(newObj[field].charAt(0) === ' ' || newObj[field].charAt(newObj[field].length-1) === ' '){
-      const err = new Error(`Leading or trailing whitespace in '${field}'`);
+      const err = new Error(`Leading or trailing whitespace in \`${field}\``);
       err.status = 400;
       return next(err);
     }
@@ -61,7 +61,7 @@ router.post('/', (req,res,next) =>{
       const newUser = {
         username: newObj.username,
         password: digest,
-        fullname: newObj.fullname
+        fullname: newObj.fullname.trim()
       };
       return User.create(newUser);
     })
