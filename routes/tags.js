@@ -9,7 +9,12 @@ const { PORT, MONGODB_URI } = require('../config');
 const Tag = require('../models/tag');
 const Note = require('../models/note');
 
+const passport = require('passport');
+
 const router = express.Router();
+
+//Authenticate first!
+router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 // GET all tags
 router.get('/', (req,res,next) =>{

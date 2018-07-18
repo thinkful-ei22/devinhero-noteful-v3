@@ -6,10 +6,16 @@ const mongoose = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 const { PORT, MONGODB_URI } = require('../config');
 
+//Schema models
 const Note = require('../models/note');
 const Folder = require('../models/folder');
 
+const passport = require('passport');
+
 const router = express.Router();
+
+//Authenticate first!
+router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 // GET all folders
 router.get('/', (req,res,next) =>{

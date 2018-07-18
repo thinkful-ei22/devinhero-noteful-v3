@@ -6,9 +6,12 @@ const mongoose = require('mongoose');
 
 const { PORT, MONGODB_URI } = require('./config');
 
+//auth
 const passport = require('passport');
 const localStrategy = require('./passport/local');
+const jwtStrategy = require('./passport/jwt');
 
+//routers
 const notesRouter = require('./routes/notes');
 const foldersRouter = require('./routes/folders');
 const tagsRouter = require('./routes/tags');
@@ -32,6 +35,10 @@ app.use(express.json());
 
 //Utilize local strategy for login
 passport.use(localStrategy);
+
+//Utilize JWS strategy for login
+passport.use(jwtStrategy);
+
 
 // Mount routers
 app.use('/api/notes', notesRouter);

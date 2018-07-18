@@ -8,8 +8,12 @@ const { PORT, MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
 
+const passport = require('passport');
 
 const router = express.Router();
+
+//Authenticate
+router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
