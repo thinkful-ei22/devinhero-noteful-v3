@@ -54,7 +54,7 @@ describe('Noteful API - Notes', function () {
          that's necessary. 
       */
      switch(field){
-       case 'folderId':
+        case 'folderId':
             if(!resBody.folderId) expect(dbRes.folderId).to.be.undefined;
             else expect(resBody.folderId).to.equal(dbRes.folderId.toJSON());
             break;

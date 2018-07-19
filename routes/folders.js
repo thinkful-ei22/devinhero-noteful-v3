@@ -19,8 +19,9 @@ router.use('/', passport.authenticate('jwt', { session: false, failWithError: tr
 
 // GET all folders
 router.get('/', (req,res,next) =>{
+  const filter = {userId: req.user.id};
 
-  Folder.find().sort('name')
+  Folder.find(filter).sort('name')
     .then(results =>{
       res.json(results);
     })
@@ -32,6 +33,7 @@ router.get('/', (req,res,next) =>{
 //GET single folder by id
 router.get('/:id', (req, res, next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -39,7 +41,7 @@ router.get('/:id', (req, res, next) =>{
     return next(err);
   }
 
-  Folder.findById(id)
+  Folder.findOne({_id: id, userId})
     .then(results =>{
       if(results) res.json(results);
       else next();
@@ -51,7 +53,9 @@ router.get('/:id', (req, res, next) =>{
 
 //POST a new folder
 router.post('/', (req,res,next) =>{
-  const newObj = {};
+  const userId = req.user.id;
+  
+  const newObj = {userId};
   const validFields = ['name'];
 
   validFields.forEach(field =>{
@@ -83,6 +87,7 @@ router.post('/', (req,res,next) =>{
 //PUT update a folder
 router.put('/:id', (req,res,next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
 
   /**** Beware the dreaded user -- validate input ****/
   if (!ObjectId.isValid(id)) {
@@ -108,9 +113,10 @@ router.put('/:id', (req,res,next) =>{
   }
 
   //Ensure new item is returned, not original
+  const query = {_id: id, userId};
   const options = {new: true};
 
-  Folder.findByIdAndUpdate(id, updateObj, options)
+  Folder.findOneAndUpdate(query, updateObj, options)
     .then(results =>{
       if(results) res.json(results);
       else next();
@@ -128,6 +134,7 @@ router.put('/:id', (req,res,next) =>{
 //Also deletes all notes in folder
 router.delete('/:id', (req,res,next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -135,7 +142,9 @@ router.delete('/:id', (req,res,next) =>{
     return next(err);
   }
 
-  Note.deleteMany({folderId: id})
+  const query = {_id: id, userId};
+
+  Note.findOneAndRemove(query)
     .then(results =>{
       return Folder.findByIdAndRemove(id);
     })
