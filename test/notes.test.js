@@ -13,6 +13,13 @@ const seedNotes = require('../db/seed/notes');
 const Folder = require ('../models/folder');
 const seedFolders = require('../db/seed/folders');
 
+const User = require ('../models/user');
+const seedUsers = require('../db/seed/users');
+
+const Tag = require ('../models/tag');
+const seedTags = require('../db/seed/tags');
+
+
 const expect = chai.expect;
 
 chai.use(chaiHttp);
@@ -29,14 +36,21 @@ describe('Noteful API - Notes', function () {
   const invalidId = 'badlyFormattedId';
   const nonexistentId = '999999999999999999999999';
 
+  let user;
+  let userId;
+  let token;
+
+  const {JWT_SECRET, JWT_EXPIRY} = require('../config');
+  const jwt = require('jsonwebtoken');
+
   const expectedIDs =
     ['id'
     ,'folderId'
+    ,'userId'
   ];
   const expectedInputFields = 
     ['title' 
     ,'content'
-    ,'favoritePuppy'
   ];
   const expectedTimestamps = 
     ['createdAt'
@@ -48,15 +62,14 @@ describe('Noteful API - Notes', function () {
 
   const compareAllExpectedIDs = function(resBody, dbRes){
     expectedIDs.forEach(field =>{
-      /* THIS FEELS JANKY... why the inconsistent need for .toJSON()? 
-
-         Handling for unknown existence of folderId is good though,
-         that's necessary. 
-      */
-     switch(field){
+      
+      switch(field){
         case 'folderId':
             if(!resBody.folderId) expect(dbRes.folderId).to.be.undefined;
             else expect(resBody.folderId).to.equal(dbRes.folderId.toJSON());
+            break;
+        case 'userId':
+            expect(resBody.userId).to.equal(dbRes.userId.toJSON());
             break;
         default:
             expect(resBody[field]).to.equal(dbRes[field]);
@@ -91,11 +104,31 @@ describe('Noteful API - Notes', function () {
     return mongoose.connect(TEST_MONGODB_URI, {useNewUrlParser: true});
   });
 
+  // beforeEach(function () {
+  //   return Note.insertMany(seedNotes)
+  //     .then(res =>{
+  //       return Folder.insertMany(seedFolders);
+  //     });
+  // });
+
   beforeEach(function () {
-    return Note.insertMany(seedNotes)
-      .then(res =>{
-        return Folder.insertMany(seedFolders);
+    return Promise.all([
+      User.insertMany(seedUsers),
+      Folder.insertMany(seedFolders),
+      Tag.insertMany(seedTags),
+      User.createIndexes,
+      Folder.createIndexes,
+      Tag.createIndexes,
+      Note.insertMany(seedNotes)
+    ])
+    .then(([users]) =>{
+      user = users[1];
+      userId = user.id;
+      token = jwt.sign({user}, JWT_SECRET, {
+            subject: user.username,
+            expiresIn: JWT_EXPIRY
       });
+    });
   });
 
   afterEach(function () {
@@ -106,10 +139,12 @@ describe('Noteful API - Notes', function () {
     return mongoose.disconnect();
   });
 
-  describe('GET /api/notes', function () {
+  describe.only('GET /api/notes', function () {
 
     it('returns a populated array w/ status 200', function(){
-      return chai.request(app).get(`${baseEndpoint}`)
+      return chai.request(app)
+        .get(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(res=>{
           expect(res).to.have.status(200);
           expect(res).to.be.json;
@@ -121,12 +156,15 @@ describe('Noteful API - Notes', function () {
 
     it('returns the correct number of elements', function(){
       let res;
-      return chai.request(app).get(`${baseEndpoint}`)
+      const filter = {userId};
+      return chai.request(app)
+        .get(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(_res=>{
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          return Note.countDocuments();
+          return Note.countDocuments(filter);
         })
         .then(count =>{
           expect(res.body).to.have.length(count);
@@ -136,12 +174,15 @@ describe('Noteful API - Notes', function () {
 
     it('contains elements with expected field values from db', function(){
       let res;
-      return chai.request(app).get(`${baseEndpoint}`)
+      const filter = {userId};
+      return chai.request(app)
+        .get(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(_res=>{
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          return Note.find().sort({updatedAt: 'desc'});
+          return Note.find(filter).sort({updatedAt: 'desc'});
       })
       .then(dbRes =>{
         for(let i = 0; i < res.body.length; ++i)
@@ -156,16 +197,19 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns expected items when passed a valid folderId in query', function(){
-      const folderId = '111111111111111111111100';
       let res;
+      const folderId = '111111111111111111111100';
+      const filter = {userId, folderId};
+      
       return chai.request(app)
         .get(`${baseEndpoint}?folderId=${folderId}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(_res =>{
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.not.be.empty;
-          return Note.find({folderId});
+          return Note.find(filter);
         })
         .then(dbRes =>{
           for(let i = 0; i < dbRes.length; ++i)
@@ -180,12 +224,15 @@ describe('Noteful API - Notes', function () {
   });
 
   //// GET /notes/:id
-  describe('GET /api/notes/:id', function(){
-    
+  describe.only('GET /api/notes/:id', function(){
     it('returns a single populated object w/ status 200', function(){
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(note =>{
-          return chai.request(app).get(`${baseEndpoint}/${note.id}`);
+          return chai.request(app)
+            .get(`${baseEndpoint}/${note.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res=>{
           expect(res).to.have.status(200);
@@ -198,10 +245,13 @@ describe('Noteful API - Notes', function () {
 
     it('returns an object with expected field values', function(){
       let dbRes;
-      return Note.findOne()
+      const filter = {userId};
+      return Note.findOne(filter)
         .then(note =>{
           dbRes = note;
-          return chai.request(app).get(`${baseEndpoint}/${note.id}`);
+          return chai.request(app)
+            .get(`${baseEndpoint}/${note.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res =>{
           expect(res).to.have.status(200);
@@ -212,7 +262,9 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      return chai.request(app).get(`${baseEndpoint}/${invalidId}`)
+      return chai.request(app)
+        .get(`${baseEndpoint}/${invalidId}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(res =>{
           expect(res).to.have.status(400);
           expect(res.body.message).to.equal(invalidIdError);
@@ -221,7 +273,9 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      return chai.request(app).get(`${baseEndpoint}/${nonexistentId}`)
+      return chai.request(app)
+        .get(`${baseEndpoint}/${nonexistentId}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(res =>{
           expect(res).to.have.status(404);
         });
@@ -230,11 +284,10 @@ describe('Noteful API - Notes', function () {
   });
 
   //// POST /notes
-  describe('POST /api/notes/', function(){
+  describe.only('POST /api/notes/', function(){
     const validPostObj = {
       title: 'The Tragedy of Darth Plagueis the Wise',
-      content: 'Ironic. He could save others from death, but not himself.',
-      folderId: '111111111111111111111100'
+      content: 'Ironic. He could save others from death, but not himself.'
     };
 
     const noTitlePostObj = {
@@ -249,6 +302,7 @@ describe('Noteful API - Notes', function () {
     it('returns a single populated object w/ status 201', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
@@ -262,6 +316,7 @@ describe('Noteful API - Notes', function () {
     it('returns the correct location header', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
@@ -275,6 +330,7 @@ describe('Noteful API - Notes', function () {
     it('returns an object with expected field values', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(validPostObj)
         .then(res =>{
           expect(res).to.have.status(201);
@@ -288,6 +344,9 @@ describe('Noteful API - Notes', function () {
         });
     });
 
+    xit('HANDLE FOLDERID FOR MULTIUSER', function(){
+
+    });
 
     xit('can be found in the db with the correct values', function(){
       //TODO
@@ -297,6 +356,7 @@ describe('Noteful API - Notes', function () {
     it('returns status 400 w/ msg if posted with invalid folderId format', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(invalidFolderIdPostObj)
         .then(res =>{
           expect(res).to.have.status(400);
@@ -314,6 +374,7 @@ describe('Noteful API - Notes', function () {
     it('returns status 400 w/ msg if posted without title', function(){
       return chai.request(app)
         .post(`${baseEndpoint}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(noTitlePostObj)
         .then(res =>{
           expect(res).to.have.status(400);
@@ -325,7 +386,7 @@ describe('Noteful API - Notes', function () {
   });
 
   //// PUT /notes/:id
-  describe('PUT /api/notes/:id', function(){
+  describe.only('PUT /api/notes/:id', function(){
     const validPutObj = {
               title: 'Obi-Wan Greeting'
               ,content: 'Hello there!' 
@@ -337,10 +398,12 @@ describe('Noteful API - Notes', function () {
 
     it('returns a single populated object w/ status 200', function(){
       const updateObj = validPutObj;
-      return Note.findOne()
+      const filter = {userId};
+      return Note.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -355,11 +418,14 @@ describe('Noteful API - Notes', function () {
     it('returns an object with the expected user inputs', function(){
       let dbRes;
       const updateObj = validPutObj;
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -379,12 +445,15 @@ describe('Noteful API - Notes', function () {
     
     it('returns expected values ', function(){
       let dbRes;
+      const filter = {userId};
+
       const updateObj = validPutObjContentOnly;
-      return Note.findOne()
+      return Note.findOne(filter)
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -414,10 +483,13 @@ describe('Noteful API - Notes', function () {
 
     it('returns status 400 w/ msg if put without any valid fields', function(){
       const updateObj = {};
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -430,10 +502,13 @@ describe('Noteful API - Notes', function () {
 
     it('returns status 400 w/ msg if put with invalid folderId format', function(){
       const updateObj = invalidFolderIdPutObj;
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -452,10 +527,13 @@ describe('Noteful API - Notes', function () {
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
       const updateObj = validPutObj;
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${invalidId}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -468,10 +546,13 @@ describe('Noteful API - Notes', function () {
 
     it('returns status 404 when passed nonexistent id', function(){
       const updateObj = validPutObj;
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${nonexistentId}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateObj);
         }) 
         .then(res =>{
@@ -483,12 +564,16 @@ describe('Noteful API - Notes', function () {
   });
 
   //// DELETE /notes/:id
-  describe('DELETE /api/notes/:id', function(){
+  describe.only('DELETE /api/notes/:id', function(){
 
     it('returns status 204', function(){
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(dbRes =>{
-          return chai.request(app).delete(`${baseEndpoint}/${dbRes.id}`);
+          return chai.request(app)
+            .delete(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res =>{
           expect(res).to.have.status(204);
@@ -497,10 +582,14 @@ describe('Noteful API - Notes', function () {
 
     it('removes item from db', function(){
       let dbRes;
-      return Note.findOne()
+      const filter = {userId};
+
+      return Note.findOne(filter)
         .then(_dbRes =>{
           dbRes = _dbRes;
-          return chai.request(app).delete(`${baseEndpoint}/${dbRes.id}`);
+          return chai.request(app)
+            .delete(`${baseEndpoint}/${dbRes.id}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res =>{
           expect(res).to.have.status(204);
@@ -513,9 +602,13 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      return Note.findOne()
+      const filter = {userId};
+      
+      return Note.findOne(filter)
         .then(dbRes =>{
-          return chai.request(app).delete(`${baseEndpoint}/${invalidId}`);
+          return chai.request(app)
+            .delete(`${baseEndpoint}/${invalidId}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res =>{
           expect(res).to.have.status(400);
@@ -526,9 +619,13 @@ describe('Noteful API - Notes', function () {
 
 
     it('returns status 404 when passed nonexistent id', function(){
-      return Note.findOne()
+      const filter = {userId};
+      
+      return Note.findOne(filter)
         .then(dbRes =>{
-          return chai.request(app).delete(`${baseEndpoint}/${nonexistentId}`);
+          return chai.request(app)
+            .delete(`${baseEndpoint}/${nonexistentId}`)
+            .set('Authorization', `Bearer ${token}`);
         })
         .then(res =>{
           expect(res).to.have.status(404);

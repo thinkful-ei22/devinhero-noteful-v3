@@ -18,7 +18,6 @@ const router = express.Router();
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 const validateFolderId = function(folderId, userId){
-  console.log('in validateFolderId: ', folderId, userId);
   if(!folderId){
     return Promise.resolve();
   }
@@ -29,7 +28,6 @@ const validateFolderId = function(folderId, userId){
   }
   return Folder.count({_id: folderId, userId})
     .then(count =>{
-        console.log('count: ', count);
         if(count === 0){const err = new Error('The `folderId` is not valid');
         err.status = 400;
         return Promise.reject(err);}
@@ -46,11 +44,8 @@ const validateTags = function(tags, userId){
     return Promise.reject(err);
   }
 
-  console.log(tags);
   for(let i = 0; i < tags.length; ++i){
-    console.log(tags[i]);
     if(!ObjectId.isValid(tags[i])){
-      console.log('catch: ', tags[i]);
       const err = new Error('The `tags` array contains an invalid id');
       err.status = 400;
       return Promise.reject(err);

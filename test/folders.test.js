@@ -22,19 +22,8 @@ chai.use(chaiHttp);
 
 
 ////Tests
-describe.only('Noteful API - Folders', function(){
-  const expectedIDs = 
-    ['id'
-    ,'userId'
-  ];
-  const expectedInputFields = 
-    ['name'
-  ];
-  const expectedTimestamps = 
-    ['createdAt'
-    ,'updatedAt'
-  ];
-
+describe('Noteful API - Folders', function(){
+  
   const baseEndpoint = '/api/folders';
 
   const badlyFormattedId = 'badlyFormattedId';
@@ -48,6 +37,20 @@ describe.only('Noteful API - Folders', function(){
 
   const {JWT_SECRET, JWT_EXPIRY} = require('../config');
   const jwt = require('jsonwebtoken');
+
+  const expectedIDs = 
+  ['id'
+  ,'userId'
+  ];
+  const expectedInputFields = 
+    ['name'
+  ];
+  const expectedTimestamps = 
+    ['createdAt'
+    ,'updatedAt'
+  ];
+
+  //Helper functions
 
   const compareAllExpectedIDs = function(resBody, dbRes){
     // console.log(resBody, dbRes);
@@ -91,7 +94,6 @@ describe.only('Noteful API - Folders', function(){
   });
 
   beforeEach(function () {
-    this.timeout(5000);
     return Promise.all([
       User.insertMany(seedUsers),
       Folder.insertMany(seedFolders),
@@ -132,6 +134,7 @@ describe.only('Noteful API - Folders', function(){
 
     it('returns the correct number of elements', function(){
       let res;
+      const filter = {userId};
       return chai.request(app)
         .get(`${baseEndpoint}`)
         .set('Authorization', `Bearer ${token}`)
@@ -139,7 +142,7 @@ describe.only('Noteful API - Folders', function(){
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          return Folder.countDocuments({userId});
+          return Folder.countDocuments(filter);
         })
         .then(count =>{
           expect(res.body).to.have.length(count);
@@ -148,6 +151,7 @@ describe.only('Noteful API - Folders', function(){
 
     it('contains elements with the expected field values', function(){
       let res;
+      const filter = {userId};
       return chai.request(app)
         .get(`${baseEndpoint}`)
         .set('Authorization', `Bearer ${token}`)
@@ -155,7 +159,7 @@ describe.only('Noteful API - Folders', function(){
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          return Folder.find({userId}).sort('name');
+          return Folder.find(filter).sort('name');
       })
       .then(dbRes =>{
         for(let i = 0; i < res.body.length; ++i){
@@ -168,7 +172,9 @@ describe.only('Noteful API - Folders', function(){
   //// GET /folders/:id
   describe('GET /api/folders/:id', function() {
     it('returns a single populated object w/ status 200', function(){
-      return Folder.findOne()
+      const filter = {userId};
+      
+      return Folder.findOne(filter)
         .then(folder =>{
           return chai.request(app)
             .get(`${baseEndpoint}/${folder.id}`)
@@ -184,7 +190,9 @@ describe.only('Noteful API - Folders', function(){
 
     it('will return an object with the expected fields', function(){
       let dbRes;
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(folder =>{
           dbRes = folder;
           return chai.request(app)
@@ -300,8 +308,9 @@ describe.only('Noteful API - Folders', function(){
     const validPutObjAllFields = {name: 'Darkest Secrets'};
 
     it('returns a single populated object w/ status 200', function(){
+      const filter = {userId}; 
       const updateObj = validPutObjAllFields;
-      return Folder.findOne({userId})
+      return Folder.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
@@ -319,8 +328,10 @@ describe.only('Noteful API - Folders', function(){
 
     it('returns an object with the expected field values', function(){
       let dbRes;
+      const filter = {userId};
+
       const updateObj = validPutObjAllFields;
-      return Folder.findOne({userId})
+      return Folder.findOne(filter)
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
@@ -341,7 +352,9 @@ describe.only('Noteful API - Folders', function(){
 
     it('returns status 400 w/ msg if put without name', function(){
       const updateObj = {};
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${dbRes.id}`)
@@ -363,7 +376,9 @@ describe.only('Noteful API - Folders', function(){
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
       const updateObj = validPutObjAllFields;
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${badlyFormattedId}`)
@@ -380,7 +395,9 @@ describe.only('Noteful API - Folders', function(){
 
     it('returns status 404 when passed nonexistent id', function(){
       const updateObj = validPutObjAllFields;
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
             .put(`${baseEndpoint}/${nonexistentId}`)
@@ -399,7 +416,9 @@ describe.only('Noteful API - Folders', function(){
   describe('DELETE /api/folders/:id', function() {
     
     it('returns status 204', function(){
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(dbRes =>{
           return chai.request(app)
           .delete(`${baseEndpoint}/${dbRes.id}`)
@@ -412,7 +431,9 @@ describe.only('Noteful API - Folders', function(){
 
     it('removes item from db', function(){
       let dbRes;
-      return Folder.findOne({userId})
+      const filter = {userId};
+
+      return Folder.findOne(filter)
         .then(_dbRes =>{
           dbRes = _dbRes;
           return chai.request(app)
@@ -429,12 +450,9 @@ describe.only('Noteful API - Folders', function(){
     });
 
     it('returns status 400 w/ msg when passed invalid id format', function(){
-      return Folder.findOne()
-        .then(dbRes =>{
-          return chai.request(app)
-          .delete(`${baseEndpoint}/${badlyFormattedId}`)
-          .set('Authorization', `Bearer ${token}`);
-        })
+      return chai.request(app)
+        .delete(`${baseEndpoint}/${badlyFormattedId}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(res =>{
           expect(res).to.have.status(400);
           expect(res).to.be.json;
@@ -443,12 +461,9 @@ describe.only('Noteful API - Folders', function(){
     });
 
     it('returns status 404 when passed nonexistent id', function(){
-      return Folder.findOne()
-        .then(dbRes =>{
-          return chai.request(app)
-          .delete(`${baseEndpoint}/${nonexistentId}`)
-          .set('Authorization', `Bearer ${token}`);
-        })
+      return chai.request(app)
+        .delete(`${baseEndpoint}/${nonexistentId}`)
+        .set('Authorization', `Bearer ${token}`)
         .then(res =>{
           expect(res).to.have.status(404);
           expect(res).to.be.json;
