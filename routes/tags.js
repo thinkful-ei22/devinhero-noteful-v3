@@ -16,9 +16,13 @@ const router = express.Router();
 //Authenticate first!
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
+
 // GET all tags
 router.get('/', (req,res,next) =>{
-  Tag.find().sort('name')
+  const userId = req.user.id;
+  const filter = {userId};
+
+  Tag.find(filter).sort('name')
     .then(results =>{
       res.json(results);
     })
@@ -30,6 +34,8 @@ router.get('/', (req,res,next) =>{
 // GET single tag by id
 router.get('/:id', (req,res,next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
+  const filter = {_id: id, userId};
 
   if(!ObjectId.isValid(id)){
     const err = new Error('The `id` is not valid');
@@ -37,16 +43,21 @@ router.get('/:id', (req,res,next) =>{
     return next(err);
   }
 
-  Tag.findById(id)
+  Tag.findOne(filter)
     .then(results =>{
       if(results) res.json(results);
       else next();
+    })
+    .catch(err =>{
+      next(err);
     });
 });
 
 //POST a new tag
 router.post('/', (req,res,next) =>{
-  const newObj = {};
+  const userId = req.user.id;
+  
+  const newObj = {userId};
   const validFields = ['name'];
 
   validFields.forEach(field =>{
@@ -60,15 +71,19 @@ router.post('/', (req,res,next) =>{
     return next(err);
   }
 
-  Tag.create(newObj)
+  Tag.findOne({name: newObj.name, userId})
+    .then(results =>{
+      if(results){
+        const err = new Error('The tag name already exists');
+        err.status = 400;
+        return Promise.reject(err);
+      }
+      return Tag.create(newObj);
+    })
     .then(results =>{
       res.location(`${req.originalUrl}/${results.id}`).status(201).json(results);
     })
     .catch(err =>{
-      if(err.code === 11000){
-        err = new Error('The tag name already exists');
-        err.status = 400;
-      }
       next(err);
     });
 });
@@ -76,6 +91,7 @@ router.post('/', (req,res,next) =>{
 //PUT update a tag
 router.put('/:id', (req,res,next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
 
   /** Trust not the user blindly, for they will lead you astray */
   if (!ObjectId.isValid(id)) {
@@ -99,9 +115,10 @@ router.put('/:id', (req,res,next) =>{
   }
 
   //Return the new updated item, not the original item
+  const query = {_id: id, userId};
   const options = {new: true};
 
-  Tag.findByIdAndUpdate(id, updateObj, options)
+  Tag.findOneAndUpdate(query, updateObj, options)
     .then(results =>{
       if(results) res.json(results);
       else next();
@@ -118,6 +135,7 @@ router.put('/:id', (req,res,next) =>{
 //DELET a tag by id
 router.delete('/:id', (req,res,next) =>{
   const id = req.params.id;
+  const userId = req.user.id;
 
   if (!ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -125,14 +143,14 @@ router.delete('/:id', (req,res,next) =>{
     return next(err);
   }
 
-  const noteQueryObj = {tags: {$all: [id]}};
+  const noteQueryObj = {userId, tags: {$all: [id]}};
   const noteUpdateObj = {$pull: {tags: id}};
   let wasTagDeleted = true;
 
-  console.log('id: ', id);
-  Tag.findByIdAndRemove(id)
+  const query = {_id: id, userId};
+
+  Tag.findOneAndRemove(query)
     .then(results =>{
-      console.log('results 1: ', results);
       if(results) {
         return Note.updateMany(noteQueryObj, noteUpdateObj);
       }
@@ -142,7 +160,6 @@ router.delete('/:id', (req,res,next) =>{
       }
     })
     .then(results =>{
-      console.log('results 2: ', results);
       if(!wasTagDeleted) next(); // this feels janky
       else if(results.n > 0) res.json(results);
       else res.status(204).end();
