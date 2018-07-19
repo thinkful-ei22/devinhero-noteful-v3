@@ -71,7 +71,10 @@ router.post('/', (req,res,next) =>{
     return next(err);
   }
 
-  Folder.create(newObj)
+  Folder.findOne({name: newObj.name, userId})
+    .then(res =>{
+      return Folder.create(newObj);
+    })
     .then(results =>{
       res.location(`${req.originalUrl}/${results.id}`).status(201).json(results);
     })
