@@ -89,6 +89,21 @@ describe('Noteful API - Notes', function () {
     });
   };
 
+  const compareTags = function(resBody, dbRes){
+    let resBodyTags = [];
+    let dbResTags = [];
+    
+    resBody.tags.forEach(tag =>{
+      resBodyTags.push(tag.id);
+    });
+
+    dbRes.tags.forEach(tag =>{
+      dbResTags.push(tag.toJSON());
+    });
+
+    expect(resBodyTags).to.have.members(dbResTags);
+  };
+
   const compareAllExpectedFields = function(resBody, dbRes){
     // console.log('ID');
     compareAllExpectedIDs(resBody, dbRes);
@@ -96,6 +111,8 @@ describe('Noteful API - Notes', function () {
     compareAllExpectedUserInputs(resBody, dbRes);
     // console.log('Timestamps');
     compareAllExpectedTimestamps(resBody, dbRes);
+
+    compareTags(resBody, dbRes);
   };
 
   //// Before/After functions
@@ -139,7 +156,7 @@ describe('Noteful API - Notes', function () {
     return mongoose.disconnect();
   });
 
-  describe.only('GET /api/notes', function () {
+  describe('GET /api/notes', function () {
 
     it('returns a populated array w/ status 200', function(){
       return chai.request(app)
@@ -224,7 +241,7 @@ describe('Noteful API - Notes', function () {
   });
 
   //// GET /notes/:id
-  describe.only('GET /api/notes/:id', function(){
+  describe('GET /api/notes/:id', function(){
     it('returns a single populated object w/ status 200', function(){
       const filter = {userId};
 
@@ -284,7 +301,7 @@ describe('Noteful API - Notes', function () {
   });
 
   //// POST /notes
-  describe.only('POST /api/notes/', function(){
+  describe('POST /api/notes/', function(){
     const validPostObj = {
       title: 'The Tragedy of Darth Plagueis the Wise',
       content: 'Ironic. He could save others from death, but not himself.'
@@ -386,7 +403,7 @@ describe('Noteful API - Notes', function () {
   });
 
   //// PUT /notes/:id
-  describe.only('PUT /api/notes/:id', function(){
+  describe('PUT /api/notes/:id', function(){
     const validPutObj = {
               title: 'Obi-Wan Greeting'
               ,content: 'Hello there!' 
@@ -564,7 +581,7 @@ describe('Noteful API - Notes', function () {
   });
 
   //// DELETE /notes/:id
-  describe.only('DELETE /api/notes/:id', function(){
+  describe('DELETE /api/notes/:id', function(){
 
     it('returns status 204', function(){
       const filter = {userId};
